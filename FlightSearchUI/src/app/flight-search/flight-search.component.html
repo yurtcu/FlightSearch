@@ -1,0 +1,242 @@
+<div class="container-fluid">
+  <div class="row no-gutter myrow">
+    <div class="col-md-12 bg-light">
+      <div class="d-flex align-items-center py-5">
+        <div class="container">
+          <div class="row">
+            <div class="col-md-12  mx-auto">
+
+              <!-- Arama filtreleri -->
+              <div class="flight-search">
+                <div class="col-md-7 offset-2">
+                  <h1 class="text-center">Uçuş Arama</h1>
+                </div>
+                <form [formGroup]="searchForm" (ngSubmit)="searchFlights()">
+                  <div class="row">
+                    <!-- Kalkış havalimanı -->
+                    <div class="form-group mb-3 col-md-4 offset-1">
+                      <label for="departureAirport">Kalkış Havalimanı:</label>
+                      <ng-select formControlName="Origin" required (focus)="resetAirports()" (clear)="resetAirports()" (input)="filterAirports($event)" name="departureAirport" [ngClass]="{'is-invalid': isInvalid('Origin') }">
+                        @for (item of filteredAirports; track item) {
+                        <ng-option [value]="item">{{item}}</ng-option>
+                        }
+                      </ng-select>
+                      <!-- Kalkış havalimanı validasyon mesajları -->
+                      <div *ngIf="isInvalid('Origin')" class="invalid-feedback px-4 p-0">
+                        <div *ngIf="searchForm.get('Origin')?.errors?.required"><small>Kalkış Havalimanını seçin.</small></div>
+                        <div *ngIf="searchForm.get('Origin')?.errors?.sameAirport"><small>Kalkış ve varış havalimanları farklı olmalıdır.</small></div>
+                      </div>
+                    </div>
+                    <!-- Varış havalimanı -->
+                    <div class="form-group mb-3 col-md-4 offset-1">
+                      <label for="arrivalAirport">Varış Havalimanı:</label>
+                      <ng-select formControlName="Destinition" required (focus)="resetAirports()" (clear)="resetAirports()" (input)="filterAirports($event)" name="arrivalAirport" [ngClass]="{'is-invalid': isInvalid('Destinition') }">
+                        @for (item of filteredAirports; track item) {
+                        <ng-option [value]="item">{{item}}</ng-option>
+                        }
+                      </ng-select>
+                      <!-- Varış havalimanı validasyon mesajları -->
+                      <div *ngIf="isInvalid('Destinition')" class="invalid-feedback px-4 p-0">
+                        <small>Varış Havalimanını seçin.</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <!-- Gidiş tarihi -->
+                    <div class="form-group mb-3 col-md-4 offset-1">
+                      <label for="departureDate">Gidiş Tarihi:</label>
+                      <input formControlName="DepartureDate" id="departureDate" name="departureDate" required type="text" mwlFlatpickr [altInput]="true" [altFormat]="flatpickrDisplayFormat" class="form-control border-0 shadow-sm px-4" [ngClass]="{'is-invalid': isInvalid('DepartureDate')}">
+                      <!--<input formControlName="DepartureDate" required type="date" id="departureDate" name="departureDate" class="form-control border-0 shadow-sm px-4" [ngClass]="{'is-invalid': isInvalid('DepartureDate')}" >-->
+                      <!-- Gidiş tarihi validasyon mesajları -->
+                      <div *ngIf="isInvalid('DepartureDate')" class="invalid-feedback px-4 p-0">
+                        <small>Gidiş tarihini girin.</small>
+                      </div>
+                    </div>
+                    <!-- Dönüş tarihi -->
+                    <div class="form-group mb-3 col-md-4 offset-1">
+                      <label for="returnDate">Dönüş Tarihi:</label>
+                      <input formControlName="ReturnDate" id="returnDate" name="returnDate" type="text" mwlFlatpickr [altInput]="true" [altFormat]="flatpickrDisplayFormat" class="form-control border-0 shadow-sm px-4" [ngClass]="{'is-invalid': isInvalid('ReturnDate')}">
+                      <!--<input formControlName="ReturnDate" type="date" id="returnDate" name="returnDate" class="form-control border-0 shadow-sm px-4">-->
+                      <div *ngIf="isInvalid('ReturnDate')" class="invalid-feedback px-4 p-0">
+                        <small>Dönüş tarihi gidiş tarihinden önce olmamalıdır.</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary btn-block text-uppercase mb-3 shadow-sm offset-1" [disabled]="loading">
+                    Uçuş Ara
+                    <div *ngIf="loading" class="spinner-border spinner-border-sm ml-2" role="status"></div>
+                  </button>
+                </form>
+              </div>
+
+              <!-- Arama sonuçları - Gidiş uçuşları listesi -->
+              <div class="row" *ngIf="formSubmitted">
+                <div class="col-md-9 offset-1">
+                  <h3 class="text-center">Gidiş Uçuşları</h3>
+                  <table class="table table-striped">
+                    <thead class="border border-dark">
+                      <tr>
+                        <th>Kalkış Tarihi</th>
+                        <th>Kalkış Saati</th>
+                        <th>Ücreti</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <ng-container *ngFor="let flight of departureFlights; let i = index">
+                        <tr (click)="toggleDepartureDetails(i)" [class.table-active]="selectedDepartureFlightIndex === i">
+                          <td>{{ getFormattedDate(flight.DepartureDateTime) }}</td>
+                          <td>{{ getFormattedTime(flight.DepartureDateTime) }}</td>
+                          <td>{{ flight.Price | number: '1.2-2' }} ₺</td>
+                        </tr>
+
+                        <!-- Satır içi uçuş detayı gösterimi -->
+                        <tr *ngIf="selectedDepartureFlightIndex === i">
+                          <td colspan="3">
+                            <div class="p-3 bg-light">
+                              <div class="row">
+                                <div class="col-3">
+                                  <strong>Varış Tarihi</strong>
+                                </div>
+                                <div class="col-9">
+                                  {{ getFormattedDate(flight.ArrivalDateTime) }}
+                                </div>
+                              </div>
+                              <div class="row">
+                                <div class="col-3">
+                                  <strong>Varış Saati</strong>
+                                </div>
+                                <div class="col-9">
+                                  {{ getFormattedTime(flight.ArrivalDateTime) }}
+                                </div>
+                              </div>
+                              <div class="row">
+                                <div class="col-3">
+                                  <strong>Uçuş No</strong>
+                                </div>
+                                <div class="col-9">
+                                  {{ flight.FlightNumber }}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </ng-container>
+                      <!-- Uçuş bulunamadı -->
+                      <tr *ngIf="!searchError && !departureFlights.length">
+                        <td colspan="3">
+                          <div class="p-3 bg-light">
+                            <div class="row">
+                              <div class="col-12 text-center text-danger">
+                                Uçuş bulunamadı.
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                      <!-- Api request hatası -->
+                      <tr *ngIf="searchError">
+                        <td colspan="3">
+                          <div class="p-3 bg-light">
+                            <div class="row">
+                              <div class="col-12 text-center text-danger">
+                                Bir hata oluştu, lütfen daha sonra tekrar deneyin.
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Arama sonuçları - Dönüş uçuşları listesi -->
+              <div class="row" *ngIf="showReturnFlights">
+                <div class="col-md-9 offset-1">
+                  <h3 class="text-center">Dönüş Uçuşları</h3>
+                  <table class="table table-striped">
+                    <thead class="border border-dark">
+                      <tr>
+                        <th>Kalkış Tarihi</th>
+                        <th>Kalkış Saati</th>
+                        <th>Ücreti</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <ng-container *ngFor="let flight of returnFlights; let i = index">
+                        <tr (click)="toggleReturnDetails(i)" [class.table-active]="selectedReturnFlightIndex === i">
+                          <td>{{ getFormattedDate(flight.DepartureDateTime) }}</td>
+                          <td>{{ getFormattedTime(flight.DepartureDateTime) }}</td>
+                          <td>{{ flight.Price | number: '1.2-2' }} ₺</td>
+                        </tr>
+
+                        <!-- Satır içi uçuş detayı gösterimi -->
+                        <tr *ngIf="selectedReturnFlightIndex === i">
+                          <td colspan="3">
+                            <div class="p-3 bg-light">
+                              <div class="row">
+                                <div class="col-3">
+                                  <strong>Varış Tarihi</strong>
+                                </div>
+                                <div class="col-9">
+                                  {{ getFormattedDate(flight.ArrivalDateTime) }}
+                                </div>
+                              </div>
+                              <div class="row">
+                                <div class="col-3">
+                                  <strong>Varış Saati</strong>
+                                </div>
+                                <div class="col-9">
+                                  {{ getFormattedTime(flight.ArrivalDateTime) }}
+                                </div>
+                              </div>
+                              <div class="row">
+                                <div class="col-3">
+                                  <strong>Uçuş No</strong>
+                                </div>
+                                <div class="col-9">
+                                  {{ flight.FlightNumber }}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </ng-container>
+                      <!-- Uçuş bulunamadı -->
+                      <tr *ngIf="!searchError && !returnFlights.length">
+                        <td colspan="3">
+                          <div class="p-3 bg-light">
+                            <div class="row">
+                              <div class="col-12 text-center text-danger">
+                                Uçuş bulunamadı.
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                      <!-- Api request hatası -->
+                      <tr *ngIf="searchError">
+                        <td colspan="3">
+                          <div class="p-3 bg-light">
+                            <div class="row">
+                              <div class="col-12 text-center text-danger">
+                                Bir hata oluştu, lütfen daha sonra tekrar deneyin.
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

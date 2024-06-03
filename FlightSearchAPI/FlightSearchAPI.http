@@ -1,0 +1,6 @@
+@FlightSearchAPI_HostAddress = http://localhost:5206
+
+GET {{FlightSearchAPI_HostAddress}}/flightsearch/
+Accept: application/json
+
+###

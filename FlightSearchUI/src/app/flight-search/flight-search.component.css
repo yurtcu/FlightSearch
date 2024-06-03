@@ -1,0 +1,28 @@
+div .myrow {
+  height: calc(var(--vh, 1vh) * 100);
+}
+
+/* app.component.css */
+input[type="text"] {
+  width: 300px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  padding: 5px;
+  border-bottom: 1px solid #ddd;
+}
+
+ng-select.is-invalid ::ng-deep .ng-select-container {
+  border-color: red;
+}
+input.is-invalid {
+  border-color: red !important;
+}
